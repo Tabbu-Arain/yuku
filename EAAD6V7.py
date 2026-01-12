@@ -28,7 +28,7 @@ def print_banner():
     banner = f"""
 {Colors.CYAN}{Colors.BOLD}
 ╔═══════════════════════════════════════════════════════════╗
-║        🔐 FACEBOOK TOKEN EXTRACTOR 🔐                      ║
+║        🔐 FACEBOOK TOKEN EXTRACTOR 🔐                     ║
 ╚═══════════════════════════════════════════════════════════╝
 {Colors.END}
     """
@@ -60,16 +60,16 @@ class FacebookPasswordEncryptor:
         try:
             rand_key = get_random_bytes(32)
             iv = get_random_bytes(12)
-
+            
             pubkey = RSA.import_key(public_key)
             cipher_rsa = PKCS1_v1_5.new(pubkey)
             encrypted_rand_key = cipher_rsa.encrypt(rand_key)
-
+            
             cipher_aes = AES.new(rand_key, AES.MODE_GCM, nonce=iv)
             current_time = int(time.time())
             cipher_aes.update(str(current_time).encode("utf-8"))
             encrypted_passwd, auth_tag = cipher_aes.encrypt_and_digest(password.encode("utf-8"))
-
+            
             buf = io.BytesIO()
             buf.write(bytes([1, int(key_id)]))
             buf.write(iv)
@@ -77,7 +77,7 @@ class FacebookPasswordEncryptor:
             buf.write(encrypted_rand_key)
             buf.write(auth_tag)
             buf.write(encrypted_passwd)
-
+            
             encoded = base64.b64encode(buf.getvalue()).decode("utf-8")
             return f"#PWD_FB4A:2:{current_time}:{encoded}"
         except Exception as e:
@@ -93,16 +93,16 @@ class FacebookAppTokens:
         'ADS_MANAGER_ANDROID': {'name': 'Ads Manager App For Android', 'app_id': '438142079694454'},
         'PAGES_MANAGER_ANDROID': {'name': 'Pages Manager For Android', 'app_id': '121876164619130'}
     }
-
+    
     @staticmethod
     def get_app_id(app_key):
         app = FacebookAppTokens.APPS.get(app_key)
         return app['app_id'] if app else None
-
+    
     @staticmethod
     def get_all_app_keys():
         return list(FacebookAppTokens.APPS.keys())
-
+    
     @staticmethod
     def extract_token_prefix(token):
         for i, char in enumerate(token):
@@ -116,7 +116,7 @@ class FacebookLogin:
     ACCESS_TOKEN = "350685531728|62f8ce9f74b12f84c123cc23437a4a32"
     API_KEY = "882a8490361da98702bf97a021ddc14d"
     SIG = "214049b9f17c38bd767de53752b53946"
-
+    
     BASE_HEADERS = {
         "content-type": "application/x-www-form-urlencoded",
         "x-fb-net-hni": "45201",
@@ -134,39 +134,39 @@ class FacebookLogin:
         "x-fb-client-ip": "True",
         "x-fb-server-cluster": "True"
     }
-
-    def __init__(self, uid_phone_mail, password, twofactor_code="", machine_id=None, convert_token_to=None, convert_all_tokens=False):
+    
+    def __init__(self, uid_phone_mail, password, twwwoo2fa="", machine_id=None, convert_token_to=None, convert_all_tokens=False):
         self.uid_phone_mail = uid_phone_mail
-        self.twofactor_code = twofactor_code
-
+        self.twwwoo2fa = twwwoo2fa
+        
         if password.startswith("#PWD_FB4A"):
             self.password = password
         else:
             self.password = FacebookPasswordEncryptor.encrypt(password)
-
+        
         if convert_all_tokens:
             self.convert_token_to = FacebookAppTokens.get_all_app_keys()
         elif convert_token_to:
             self.convert_token_to = convert_token_to if isinstance(convert_token_to, list) else [convert_token_to]
         else:
             self.convert_token_to = []
-
+        
         self.session = requests.Session()
-
+        
         self.device_id = str(uuid.uuid4())
         self.adid = str(uuid.uuid4())
         self.secure_family_device_id = str(uuid.uuid4())
         self.machine_id = machine_id if machine_id else self._generate_machine_id()
         self.jazoest = ''.join(random.choices(string.digits, k=5))
         self.sim_serial = ''.join(random.choices(string.digits, k=20))
-
+        
         self.headers = self._build_headers()
         self.data = self._build_data()
-
+    
     @staticmethod
     def _generate_machine_id():
         return ''.join(random.choices(string.ascii_letters + string.digits, k=24))
-
+    
     def _build_headers(self):
         headers = self.BASE_HEADERS.copy()
         headers.update({
@@ -174,7 +174,7 @@ class FacebookLogin:
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190705.08211809) [FBAN/FB4A;FBAV/417.0.0.33.65;FBPN/com.facebook.katana;FBLC/vi_VN;FBBV/480086274;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86:armeabi-v7a;FBDM/{density=1.5,width=1280,height=720};FB_FW/1;FBRV/0;]"
         })
         return headers
-
+    
     def _build_data(self):
         base_data = {
             "format": "json",
@@ -187,7 +187,7 @@ class FacebookLogin:
             "api_key": self.API_KEY,
             "access_token": self.ACCESS_TOKEN
         }
-
+        
         base_data.update({
             "adid": self.adid,
             "device_id": self.device_id,
@@ -218,15 +218,15 @@ class FacebookLogin:
             "fb_api_caller_class": "Fb4aAuthHandler",
             "sig": self.SIG
         })
-
+        
         return base_data
-
+    
     def _convert_token(self, access_token, target_app):
         try:
             app_id = FacebookAppTokens.get_app_id(target_app)
             if not app_id:
                 return None
-
+            
             response = requests.post(
                 'https://api.facebook.com/method/auth.getSessionforApp',
                 data={
@@ -236,21 +236,21 @@ class FacebookLogin:
                     'generate_session_cookies': '1'
                 }
             )
-
+            
             result = response.json()
-
+            
             if 'access_token' in result:
                 token = result['access_token']
                 prefix = FacebookAppTokens.extract_token_prefix(token)
-
+                
                 cookies_dict = {}
                 cookies_string = ""
-
+                
                 if 'session_cookies' in result:
                     for cookie in result['session_cookies']:
                         cookies_dict[cookie['name']] = cookie['value']
                         cookies_string += f"{cookie['name']}={cookie['value']}; "
-
+                
                 return {
                     'token_prefix': prefix,
                     'access_token': token,
@@ -259,16 +259,16 @@ class FacebookLogin:
                         'string': cookies_string.rstrip('; ')
                     }
                 }
-
+            
             return None
-
+                
         except:
             return None
-
+    
     def _parse_success_response(self, response_json):
         original_token = response_json.get('access_token')
         original_prefix = FacebookAppTokens.extract_token_prefix(original_token)
-
+        
         result = {
             'success': True,
             'original_token': {
@@ -277,7 +277,7 @@ class FacebookLogin:
             },
             'cookies': {}
         }
-
+        
         if 'session_cookies' in response_json:
             cookies_dict = {}
             cookies_string = ""
@@ -288,21 +288,23 @@ class FacebookLogin:
                 'dict': cookies_dict,
                 'string': cookies_string.rstrip('; ')
             }
-
+        
         if self.convert_token_to:
             result['converted_tokens'] = {}
             for target_app in self.convert_token_to:
                 converted = self._convert_token(original_token, target_app)
                 if converted:
                     result['converted_tokens'][target_app] = converted
-
+        
         return result
-
+    
     def _handle_2fa(self, error_data):
-        if not self.twofactor_code:
+        if not self.twwwoo2fa:
             return {'success': False, 'error': 'Need 2FA code but not provided'}
-
+        
         try:
+            twofactor_code = pyotp.TOTP(self.twwwoo2fa).now()
+            
             data_2fa = {
                 'locale': 'vi_VN',
                 'format': 'json',
@@ -311,7 +313,7 @@ class FacebookLogin:
                 'access_token': self.ACCESS_TOKEN,
                 'generate_session_cookies': 'true',
                 'generate_machine_id': '1',
-                'twofactor_code': self.twofactor_code,
+                'twofactor_code': twofactor_code,
                 'credentials_type': 'two_factor',
                 'error_detail_type': 'button_with_disabled',
                 'first_factor': error_data['login_first_factor'],
@@ -319,10 +321,10 @@ class FacebookLogin:
                 'userid': error_data['uid'],
                 'machine_id': error_data['login_first_factor']
             }
-
+            
             response = self.session.post(self.API_URL, data=data_2fa, headers=self.headers)
             response_json = response.json()
-
+            
             if 'access_token' in response_json:
                 return self._parse_success_response(response_json)
             elif 'error' in response_json:
@@ -330,32 +332,32 @@ class FacebookLogin:
                     'success': False,
                     'error': response_json['error'].get('message', 'Unknown error')
                 }
-
+            
         except Exception as e:
             return {'success': False, 'error': f'2FA error: {str(e)}'}
-
+    
     def login(self):
         try:
             response = self.session.post(self.API_URL, headers=self.headers, data=self.data)
             response_json = response.json()
-
+            
             if 'access_token' in response_json:
                 return self._parse_success_response(response_json)
-
+            
             if 'error' in response_json:
                 error_data = response_json.get('error', {}).get('error_data', {})
-
+                
                 if 'login_first_factor' in error_data and 'uid' in error_data:
                     return self._handle_2fa(error_data)
-
+                
                 return {
                     'success': False,
                     'error': response_json['error'].get('message', 'Unknown error'),
                     'error_user_msg': response_json['error'].get('error_user_msg')
                 }
-
+            
             return {'success': False, 'error': 'Unknown response format'}
-
+            
         except json.JSONDecodeError:
             return {'success': False, 'error': 'Invalid JSON response'}
         except Exception as e:
@@ -364,58 +366,58 @@ class FacebookLogin:
 
 def main():
     print_banner()
-
+    
     print(f"{Colors.CYAN}📋 ENTER FACEBOOK CREDENTIALS{Colors.END}\n")
-
+    
     # Get user inputs
     uid_phone_mail = input(f"{Colors.CYAN}📧 Email/Phone: {Colors.END}").strip()
-
+    
     import getpass
     password = getpass.getpass(f"{Colors.CYAN}🔒 Password: {Colors.END}").strip()
-
+    
     has_2fa = input(f"{Colors.CYAN}🔐 2FA enabled? (y/n): {Colors.END}").strip().lower()
-
-    twofactor_code = ""
+    
+    twwwoo2fa = ""
     if has_2fa == 'y':
-        twofactor_code = input(f"{Colors.CYAN}🔑 2FA Code (Authenticator/WhatsApp): {Colors.END}").strip().replace(" ", "")
-
+        twwwoo2fa = input(f"{Colors.CYAN}🔑 2FA Secret: {Colors.END}").strip().replace(" ", "")
+    
     machine_id_input = input(f"{Colors.CYAN}🔧 Machine ID (press Enter to auto-generate): {Colors.END}").strip()
     machine_id = machine_id_input if machine_id_input else None
-
+    
     print(f"\n{Colors.YELLOW}🚀 Processing...{Colors.END}\n")
-
+    
     fb_login = FacebookLogin(
         uid_phone_mail=uid_phone_mail,
         password=password,
-        twofactor_code=twofactor_code,
+        twwwoo2fa=twwwoo2fa,
         machine_id=machine_id,
         convert_all_tokens=True
     )
-
+    
     result = fb_login.login()
-
+    
     if result['success']:
         print(f"{Colors.GREEN}{Colors.BOLD}")
         print("=" * 80)
         print("CONVERTED TOKENS")
         print("=" * 80)
         print(f"{Colors.END}")
-
+        
         # Print original token
         print(f"{Colors.CYAN}{result['original_token']['token_prefix']}:{Colors.END}")
         print(f"{result['original_token']['access_token']}\n")
-
+        
 
         if 'converted_tokens' in result and result['converted_tokens']:
             for app_key, token_data in result['converted_tokens'].items():
                 print(f"{Colors.CYAN}{token_data['token_prefix']}:{Colors.END}")
                 print(f"{token_data['access_token']}\n")
-
+        
         print(f"{Colors.GREEN}{Colors.BOLD}=" * 80)
         print("COOKIES")
         print("=" * 80 + f"{Colors.END}")
         print(f"{result['cookies']['string']}\n")
-
+        
     else:
         print(f"{Colors.RED}{Colors.BOLD}")
         print("=" * 80)
