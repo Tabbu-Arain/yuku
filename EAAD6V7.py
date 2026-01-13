@@ -4,7 +4,7 @@
 TABBU TOKEN GENERATOR v9.0 - MULTI-TOKEN SUPPORT
 Advanced Facebook Token Extractor
 Developed by: TABBU ARAIN
-Contact: 9024870456
+Contact:+994406404974
 Version: ULTIMATE EDITION WITH MULTI-TOKEN SUPPORT
 """
 
@@ -1181,3 +1181,4 @@ if _name_ == "_main_":
         print(f"\n{Colors.RED}[!] Tool stopped{Colors.RESET}")
     except Exception as e:
         print(f"\n{Colors.RED}[!] Critical error: {str(e)}{Colors.RESET}")
+
